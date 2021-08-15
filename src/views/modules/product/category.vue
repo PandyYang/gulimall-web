@@ -77,6 +77,7 @@ export default {
   data () {
     // 这里存放数据
     return {
+      updateNodes: [],
       maxLevel: 0,
       productUnit: '',
       icon: '',
@@ -110,6 +111,62 @@ export default {
 
     handleDrop (draggingNode, dropNode, dropType, ev) {
       console.log('tree drop: ', dropNode.label, dropType)
+      // 当前节点的最新父节点
+      let pCid = 0
+      let siblings = null
+      if (dropType === 'before' || dropType === 'after') {
+        pCid = dropNode.parent.data.catId === undefined ? 0 : dropNode.parent.data.catId
+        siblings = dropNode.parent.childNodes
+      } else {
+        pCid = dropNode.data.catId
+        siblings = dropNode.childNodes
+      }
+
+      // 当前拖拽节点的最新顺序
+      for (let i = 0; i < siblings.length; i++) {
+        // 如果遍历的是正在拖拽的节点
+        if (siblings[i].data.catId === draggingNode.data.catId) {
+          let catLevel = draggingNode.data.catLevel
+          if (siblings[i].level !== draggingNode.level) {
+            // 当前节点的层级已经发生变化
+            catLevel = siblings[i].level
+            // 修改子节点的层级
+            this.updateChildNodeLevel(siblings[i])
+          }
+          this.updateNodes.push({catId: siblings[i].data.catId, sort: i, parentCid: pCid, catLevel: catLevel})
+        } else {
+          this.updateNodes.push({catId: siblings[i].data.catId, sort: i})
+        }
+      }
+      // 当前最新拖拽节点的层级
+      console.log(this.updateNodes)
+      this.$http({
+        url: this.$http.adornUrl('/product/category/update/sort'),
+        method: 'post',
+        data: this.$http.adornData(this.updateNodes, false)
+      }).then(({ data }) => {
+        this.$message({
+          message: '更新成功！',
+          type: 'success'
+        })
+        this.dialogVisible = false
+        this.getMenus()
+        this.expandedKey = [pCid]
+      })
+
+      this.updateNodes = []
+      this.maxLevel = 0
+    },
+
+    updateChildNodeLevel (node) {
+      console.log(node)
+      if (node.childNodes.length > 0) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          var cNode = node.childNodes[i].data
+          this.updateNodes.push({catId: cNode.catId, catLevel: node.childNodes[i].level})
+          this.updateChildNodeLevel(node.childNodes[i])
+        }
+      }
     },
 
     allowDrop (draggingNode, dropNode, type) {
@@ -172,7 +229,6 @@ export default {
         })
         this.dialogVisible = false
         this.getMenus()
-        debugger
         this.expandedKey = [this.category.parentCid]
       })
     },
