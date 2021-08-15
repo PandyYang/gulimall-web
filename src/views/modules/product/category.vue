@@ -1,12 +1,15 @@
 <template>
   <div>
     <el-tree
+      draggable
       :data="menus"
       :props="defaultProps"
       show-checkbox
       node-key="catId"
       :default-expanded-keys="expandedKey"
       :expand-on-click-node="false"
+      :allow-drop="allowDrop"
+      @node-drop = "handleDrop"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -74,6 +77,7 @@ export default {
   data () {
     // 这里存放数据
     return {
+      maxLevel: 0,
       productUnit: '',
       icon: '',
       title: '',
@@ -103,6 +107,35 @@ export default {
   watch: {},
   // 方法集合
   methods: {
+
+    handleDrop (draggingNode, dropNode, dropType, ev) {
+      console.log('tree drop: ', dropNode.label, dropType)
+    },
+
+    allowDrop (draggingNode, dropNode, type) {
+      // 1.被拖动的节点以及所在的父节点的总层数不能大于3
+      this.countNodeLevel(draggingNode.data)
+      // 2
+      let deep = this.maxLevel - draggingNode.data.catLevel + 1
+
+      if (type === 'inner') {
+        return (deep + dropNode.level) <= 3
+      } else {
+        return (deep + dropNode.parent.level) <= 3
+      }
+    },
+
+    countNodeLevel (node) {
+      // 找到所有子节点求出最大深度
+      if (node.children != null && node.children.length > 0) {
+        for (let i = 0; i < node.children.length; i++) {
+          if (node.children[i].catLevel > this.maxLevel) {
+            this.maxLevel = node.children[i].catLevel
+          }
+        }
+      }
+    },
+
     edit (data) {
       console.log(data)
       this.title = '修改分类'
