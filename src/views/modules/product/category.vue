@@ -8,6 +8,7 @@
     <el-button v-if="draggable" @click="batchSave">
       批量保存
     </el-button>
+    <el-button type="danger" @click="batchDelete">批量删除</el-button>
     <el-tree
       :draggable="draggable"
       :data="menus"
@@ -18,6 +19,7 @@
       :expand-on-click-node="false"
       :allow-drop="allowDrop"
       @node-drop = "handleDrop"
+      ref="menuTree"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -85,7 +87,7 @@ export default {
   data () {
     // 这里存放数据
     return {
-      pCid: 0,
+      pCid: [],
       draggable: false,
       updateNodes: [],
       maxLevel: 0,
@@ -118,6 +120,36 @@ export default {
   watch: {},
   // 方法集合
   methods: {
+    batchDelete () {
+      let checkedNodes = this.$refs.menuTree.getCheckedNodes()
+      let catIds = []
+      for (let i = 0; i < checkedNodes.length; i++) {
+        catIds.push(checkedNodes[i].catId)
+      }
+
+      this.$confirm(`是否批量删除${catIds}?`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$http({
+          url: this.$http.adornUrl('/product/category/delete'),
+          method: 'post',
+          data: this.$http.adornData(catIds, false)
+        }).then(({ data }) => {
+          this.$message({
+            message: '保存成功！',
+            type: 'success'
+          })
+          this.dialogVisible = false
+          this.getMenus()
+          debugger
+          this.expandedKey = [this.category.parentCid]
+        })
+      }).catch(() => {
+
+      })
+    },
 
     batchSave () {
       this.$http({
@@ -129,26 +161,29 @@ export default {
           message: '更新成功！',
           type: 'success'
         })
-        this.dialogVisible = false
-        this.getMenus()
-        this.expandedKey = [this.pCid]
       })
 
+      this.dialogVisible = false
+      this.getMenus()
+      this.expandedKey = this.pCid
       this.updateNodes = []
       this.maxLevel = 0
-      this.pCid = 0
+      // this.pCid = []
     },
     handleDrop (draggingNode, dropNode, dropType, ev) {
       console.log('tree drop: ', dropNode.label, dropType)
       // 当前节点的最新父节点
       let siblings = null
+      let pCid = 0
       if (dropType === 'before' || dropType === 'after') {
-        this.pCid = dropNode.parent.data.catId === undefined ? 0 : dropNode.parent.data.catId
+        pCid = dropNode.parent.data.catId === undefined ? 0 : dropNode.parent.data.catId
         siblings = dropNode.parent.childNodes
       } else {
-        this.pCid = dropNode.data.catId
+        pCid = dropNode.data.catId
         siblings = dropNode.childNodes
       }
+
+      this.pCid.push(pCid)
 
       // 当前拖拽节点的最新顺序
       for (let i = 0; i < siblings.length; i++) {
