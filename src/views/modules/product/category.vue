@@ -6,40 +6,54 @@
       show-checkbox
       node-key="catId"
       :default-expanded-keys="expandedKey"
-      :expand-on-click-node="false">
-    <span class="custom-tree-node" slot-scope="{ node, data }">
+      :expand-on-click-node="false"
+    >
+      <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
         <span>
           <el-button
             v-if="node.level <= 2"
             type="text"
             size="mini"
-            @click="() => append(data)">
+            @click="() => append(data)"
+          >
             Append
+          </el-button>
+          <el-button
+            v-if="node.level <= 2"
+            type="text"
+            size="mini"
+            @click="() => edit(data)"
+          >
+            Edit
           </el-button>
           <el-button
             v-if="node.childNodes.length === 0"
             type="text"
             size="mini"
-            @click="() => remove(node, data)">
+            @click="() => remove(node, data)"
+          >
             Delete
           </el-button>
         </span>
       </span>
     </el-tree>
-    <el-dialog
-      title="提示"
-      :visible.sync="dialogVisible"
-      width="30%">
+    <el-dialog :title="title" :visible.sync="dialogVisible" width="30%">
       <el-form :model="category">
         <el-form-item label="活动名称">
           <el-input v-model="category.name"></el-input>
         </el-form-item>
+        <el-form-item label="计量单位">
+          <el-input v-model="category.productUnit"></el-input>
+        </el-form-item>
+        <el-form-item label="图标">
+          <el-input v-model="category.icon"></el-input>
+        </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-    <el-button @click="dialogVisible = false">取 消</el-button>
-    <el-button type="primary" @click="addCategory">确 定</el-button>
-  </span>
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitData">确 定</el-button>
+      </span>
     </el-dialog>
   </div>
 </template>
@@ -55,12 +69,19 @@ export default {
   data () {
     // 这里存放数据
     return {
+      productUnit: '',
+      icon: '',
+      title: '',
+      dialogType: '',
       category: {
         name: '',
         parentCid: 0,
         catLevel: 0,
         showStatus: 1,
-        sort: 0
+        sort: 0,
+        catId: 0,
+        productUnit: '',
+        icon: ''
       },
       dialogVisible: false,
       expandedKey: [],
@@ -77,6 +98,25 @@ export default {
   watch: {},
   // 方法集合
   methods: {
+    edit (data) {
+      console.log(data)
+      this.title = '修改分类'
+      this.dialogType = 'edit'
+      this.dialogVisible = true
+      // 发送请求获取当前节点最新的数据
+      this.$http({
+        url: this.$http.adornUrl(`/product/category/info/${data.catId}`),
+        method: 'get',
+        data: this.$http.adornData(this.category, false)
+      }).then(({ data }) => {
+        this.category.name = data.category.name
+        this.category.catId = data.category.catId
+        this.category.icon = data.category.icon
+        this.category.productUnit = data.category.productUnit
+        this.category.parentCid = data.category.parentCid
+      })
+    },
+
     addCategory () {
       console.log(this.category)
       this.dialogVisible = false
@@ -85,7 +125,7 @@ export default {
         url: this.$http.adornUrl('/product/category/save'),
         method: 'post',
         data: this.$http.adornData(this.category, false)
-      }).then(({data}) => {
+      }).then(({ data }) => {
         this.$message({
           message: '保存成功！',
           type: 'success'
@@ -100,13 +140,15 @@ export default {
       this.$http({
         url: this.$http.adornUrl('/product/category/list/tree'),
         method: 'get'
-      }).then(({data}) => {
+      }).then(({ data }) => {
         this.menus = data
       })
     },
 
     append (data) {
+      this.dialogType = 'add'
       this.dialogVisible = true
+      this.title = '添加分类'
       this.category.parentCid = data.catId
       this.category.catLevel = data.catLevel * 1 + 1
     },
@@ -122,7 +164,7 @@ export default {
           url: this.$http.adornUrl('/product/category/delete'),
           method: 'post',
           data: this.$http.adornData(ids, false)
-        }).then(({data}) => {
+        }).then(({ data }) => {
           this.$message({
             message: '删除成功！',
             type: 'success'
@@ -130,10 +172,38 @@ export default {
           this.getMenus()
           this.expandedKey = [node.parent.data.catId]
         })
-      }).catch(() => {
+      }).catch(() => { })
+    },
 
+    submitData () {
+      if (this.dialogType === 'add') {
+        this.addCategory()
+      }
+
+      if (this.dialogType === 'edit') {
+        this.editCategory()
+      }
+    },
+
+    editCategory () {
+      var {catId, name, icon, productUnit} = this.category
+      var data = {catId, name, icon, productUnit}
+
+      this.$http({
+        url: this.$http.adornUrl('/product/category/update'),
+        method: 'post',
+        data: this.$http.adornData(data, false)
+      }).then(({ data }) => {
+        this.$message({
+          message: '修改成功！',
+          type: 'success'
+        })
+        this.dialogVisible = false
+        this.getMenus()
+        this.expandedKey = [this.category.parentCid]
       })
     }
+
   },
   // 生命周期 - 创建完成（可以访问当前 this 实例）
   created () {
