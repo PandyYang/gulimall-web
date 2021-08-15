@@ -38,7 +38,12 @@
         </span>
       </span>
     </el-tree>
-    <el-dialog :title="title" :visible.sync="dialogVisible" width="30%">
+    <el-dialog
+      :title="title"
+      :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
+      width="30%"
+    >
       <el-form :model="category">
         <el-form-item label="活动名称">
           <el-input v-model="category.name"></el-input>
@@ -114,11 +119,13 @@ export default {
         this.category.icon = data.category.icon
         this.category.productUnit = data.category.productUnit
         this.category.parentCid = data.category.parentCid
+        this.category.catLevel = data.category.catLevel
+        this.category.sort = data.category.sort
+        this.category.showStatus = data.category.showStatus
       })
     },
 
     addCategory () {
-      console.log(this.category)
       this.dialogVisible = false
 
       this.$http({
@@ -132,6 +139,7 @@ export default {
         })
         this.dialogVisible = false
         this.getMenus()
+        debugger
         this.expandedKey = [this.category.parentCid]
       })
     },
@@ -151,6 +159,13 @@ export default {
       this.title = '添加分类'
       this.category.parentCid = data.catId
       this.category.catLevel = data.catLevel * 1 + 1
+
+      this.category.name = ''
+      this.category.catId = null
+      this.category.icon = ''
+      this.category.productUnit = ''
+      this.category.sort = 0
+      this.category.showStatus = 1
     },
 
     remove (node, data) {
@@ -186,8 +201,8 @@ export default {
     },
 
     editCategory () {
-      var {catId, name, icon, productUnit} = this.category
-      var data = {catId, name, icon, productUnit}
+      var { catId, name, icon, productUnit } = this.category
+      var data = { catId, name, icon, productUnit }
 
       this.$http({
         url: this.$http.adornUrl('/product/category/update'),
