@@ -1,7 +1,15 @@
 <template>
   <div>
+    <el-switch
+      style="padding: 20px"
+      v-model="draggable"
+      active-text="开启拖拽">
+    </el-switch>
+    <el-button v-if="draggable" @click="batchSave">
+      批量保存
+    </el-button>
     <el-tree
-      draggable
+      :draggable="draggable"
       :data="menus"
       :props="defaultProps"
       show-checkbox
@@ -77,6 +85,8 @@ export default {
   data () {
     // 这里存放数据
     return {
+      pCid: 0,
+      draggable: false,
       updateNodes: [],
       maxLevel: 0,
       productUnit: '',
@@ -109,16 +119,34 @@ export default {
   // 方法集合
   methods: {
 
+    batchSave () {
+      this.$http({
+        url: this.$http.adornUrl('/product/category/update/sort'),
+        method: 'post',
+        data: this.$http.adornData(this.updateNodes, false)
+      }).then(({ data }) => {
+        this.$message({
+          message: '更新成功！',
+          type: 'success'
+        })
+        this.dialogVisible = false
+        this.getMenus()
+        this.expandedKey = [this.pCid]
+      })
+
+      this.updateNodes = []
+      this.maxLevel = 0
+      this.pCid = 0
+    },
     handleDrop (draggingNode, dropNode, dropType, ev) {
       console.log('tree drop: ', dropNode.label, dropType)
       // 当前节点的最新父节点
-      let pCid = 0
       let siblings = null
       if (dropType === 'before' || dropType === 'after') {
-        pCid = dropNode.parent.data.catId === undefined ? 0 : dropNode.parent.data.catId
+        this.pCid = dropNode.parent.data.catId === undefined ? 0 : dropNode.parent.data.catId
         siblings = dropNode.parent.childNodes
       } else {
-        pCid = dropNode.data.catId
+        this.pCid = dropNode.data.catId
         siblings = dropNode.childNodes
       }
 
@@ -133,29 +161,13 @@ export default {
             // 修改子节点的层级
             this.updateChildNodeLevel(siblings[i])
           }
-          this.updateNodes.push({catId: siblings[i].data.catId, sort: i, parentCid: pCid, catLevel: catLevel})
+          this.updateNodes.push({catId: siblings[i].data.catId, sort: i, parentCid: this.pCid, catLevel: catLevel})
         } else {
           this.updateNodes.push({catId: siblings[i].data.catId, sort: i})
         }
       }
       // 当前最新拖拽节点的层级
       console.log(this.updateNodes)
-      this.$http({
-        url: this.$http.adornUrl('/product/category/update/sort'),
-        method: 'post',
-        data: this.$http.adornData(this.updateNodes, false)
-      }).then(({ data }) => {
-        this.$message({
-          message: '更新成功！',
-          type: 'success'
-        })
-        this.dialogVisible = false
-        this.getMenus()
-        this.expandedKey = [pCid]
-      })
-
-      this.updateNodes = []
-      this.maxLevel = 0
     },
 
     updateChildNodeLevel (node) {
@@ -171,9 +183,9 @@ export default {
 
     allowDrop (draggingNode, dropNode, type) {
       // 1.被拖动的节点以及所在的父节点的总层数不能大于3
-      this.countNodeLevel(draggingNode.data)
-      // 2
-      let deep = this.maxLevel - draggingNode.data.catLevel + 1
+      this.countNodeLevel(draggingNode)
+      // 拖动节点 需要将节点在当前树中的level进行变更 而不是数据库中 因为数据可能没有更新。
+      let deep = Math.abs(this.maxLevel) - draggingNode.level + 1
 
       if (type === 'inner') {
         return (deep + dropNode.level) <= 3
@@ -183,12 +195,13 @@ export default {
     },
 
     countNodeLevel (node) {
-      // 找到所有子节点求出最大深度
-      if (node.children != null && node.children.length > 0) {
-        for (let i = 0; i < node.children.length; i++) {
-          if (node.children[i].catLevel > this.maxLevel) {
-            this.maxLevel = node.children[i].catLevel
+      // 找到所有子节点, 求出最大深度
+      if (node.childNodes != null && node.childNodes.length > 0) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          if (node.childNodes[i].catLevel > this.maxLevel) {
+            this.maxLevel = node.childNodes[i].catLevel
           }
+          this.countNodeLevel(node.childNodes[i])
         }
       }
     },
