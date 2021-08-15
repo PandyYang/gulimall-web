@@ -1,11 +1,12 @@
 <template>
-  <el-tree
-    :data="menus"
-    :props="defaultProps"
-    show-checkbox
-    node-key="catId"
-    :default-expanded-keys="expandedKey"
-    :expand-on-click-node="false">
+  <div>
+    <el-tree
+      :data="menus"
+      :props="defaultProps"
+      show-checkbox
+      node-key="catId"
+      :default-expanded-keys="expandedKey"
+      :expand-on-click-node="false">
     <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
         <span>
@@ -25,7 +26,22 @@
           </el-button>
         </span>
       </span>
-  </el-tree>
+    </el-tree>
+    <el-dialog
+      title="提示"
+      :visible.sync="dialogVisible"
+      width="30%">
+      <el-form :model="category">
+        <el-form-item label="活动名称">
+          <el-input v-model="category.name"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+    <el-button @click="dialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="addCategory">确 定</el-button>
+  </span>
+    </el-dialog>
+  </div>
 </template>
 
 <script>
@@ -39,6 +55,14 @@ export default {
   data () {
     // 这里存放数据
     return {
+      category: {
+        name: '',
+        parentCid: 0,
+        catLevel: 0,
+        showStatus: 1,
+        sort: 0
+      },
+      dialogVisible: false,
       expandedKey: [],
       menus: [],
       defaultProps: {
@@ -53,17 +77,38 @@ export default {
   watch: {},
   // 方法集合
   methods: {
+    addCategory () {
+      console.log(this.category)
+      this.dialogVisible = false
+
+      this.$http({
+        url: this.$http.adornUrl('/product/category/save'),
+        method: 'post',
+        data: this.$http.adornData(this.category, false)
+      }).then(({data}) => {
+        this.$message({
+          message: '保存成功！',
+          type: 'success'
+        })
+        this.dialogVisible = false
+        this.getMenus()
+        this.expandedKey = [this.category.parentCid]
+      })
+    },
+
     getMenus () {
       this.$http({
         url: this.$http.adornUrl('/product/category/list/tree'),
         method: 'get'
-      }).then(({ data }) => {
+      }).then(({data}) => {
         this.menus = data
       })
     },
 
     append (data) {
-      console.log(data)
+      this.dialogVisible = true
+      this.category.parentCid = data.catId
+      this.category.catLevel = data.catLevel * 1 + 1
     },
 
     remove (node, data) {
