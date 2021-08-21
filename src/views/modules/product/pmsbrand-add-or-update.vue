@@ -8,7 +8,8 @@
       <el-input v-model="dataForm.name" placeholder="品牌名"></el-input>
     </el-form-item>
     <el-form-item label="品牌logo地址" prop="logo">
-      <el-input v-model="dataForm.logo" placeholder="品牌logo地址"></el-input>
+<!--      <el-input v-model="dataForm.logo" placeholder="品牌logo地址"></el-input>-->
+      <single-upload v-model = "dataForm.logo"></single-upload>
     </el-form-item>
     <el-form-item label="介绍" prop="descript">
       <el-input v-model="dataForm.descript" placeholder="介绍"></el-input>
@@ -31,99 +32,101 @@
 </template>
 
 <script>
-  export default {
-    data () {
-      return {
-        visible: false,
-        dataForm: {
-          brandId: 0,
-          name: '',
-          logo: '',
-          descript: '',
-          showStatus: '',
-          firstLetter: '',
-          sort: ''
-        },
-        dataRule: {
-          name: [
-            { required: true, message: '品牌名不能为空', trigger: 'blur' }
-          ],
-          logo: [
-            { required: true, message: '品牌logo地址不能为空', trigger: 'blur' }
-          ],
-          descript: [
-            { required: true, message: '介绍不能为空', trigger: 'blur' }
-          ],
-          showStatus: [
-            { required: true, message: '显示状态[0-不显示；1-显示]不能为空', trigger: 'blur' }
-          ],
-          firstLetter: [
-            { required: true, message: '检索首字母不能为空', trigger: 'blur' }
-          ],
-          sort: [
-            { required: true, message: '排序不能为空', trigger: 'blur' }
-          ]
-        }
-      }
-    },
-    methods: {
-      init (id) {
-        this.dataForm.brandId = id || 0
-        this.visible = true
-        this.$nextTick(() => {
-          this.$refs['dataForm'].resetFields()
-          if (this.dataForm.brandId) {
-            this.$http({
-              url: this.$http.adornUrl(`/product/brand/info/${this.dataForm.brandId}`),
-              method: 'get',
-              params: this.$http.adornParams()
-            }).then(({data}) => {
-              if (data && data.code === 0) {
-                this.dataForm.name = data.pmsBrand.name
-                this.dataForm.logo = data.pmsBrand.logo
-                this.dataForm.descript = data.pmsBrand.descript
-                this.dataForm.showStatus = data.pmsBrand.showStatus
-                this.dataForm.firstLetter = data.pmsBrand.firstLetter
-                this.dataForm.sort = data.pmsBrand.sort
-              }
-            })
-          }
-        })
+import singleUpload from '../../../components/upload/singleUpload'
+export default {
+  components: {singleUpload},
+  data () {
+    return {
+      visible: false,
+      dataForm: {
+        brandId: 0,
+        name: '',
+        logo: '',
+        descript: '',
+        showStatus: '',
+        firstLetter: '',
+        sort: ''
       },
-      // 表单提交
-      dataFormSubmit () {
-        this.$refs['dataForm'].validate((valid) => {
-          if (valid) {
-            this.$http({
-              url: this.$http.adornUrl(`/product/brand/${!this.dataForm.brandId ? 'save' : 'update'}`),
-              method: 'post',
-              data: this.$http.adornData({
-                'brandId': this.dataForm.brandId || undefined,
-                'name': this.dataForm.name,
-                'logo': this.dataForm.logo,
-                'descript': this.dataForm.descript,
-                'showStatus': this.dataForm.showStatus,
-                'firstLetter': this.dataForm.firstLetter,
-                'sort': this.dataForm.sort
-              })
-            }).then(({data}) => {
-              if (data && data.code === 0) {
-                this.$message({
-                  message: '操作成功',
-                  type: 'success',
-                  duration: 1500,
-                  onClose: () => {
-                    this.visible = false
-                    this.$emit('refreshDataList')
-                  }
-                })
-              } else {
-                this.$message.error(data.msg)
-              }
-            })
-          }
-        })
+      dataRule: {
+        name: [
+            { required: true, message: '品牌名不能为空', trigger: 'blur' }
+        ],
+        logo: [
+            { required: true, message: '品牌logo地址不能为空', trigger: 'blur' }
+        ],
+        descript: [
+            { required: true, message: '介绍不能为空', trigger: 'blur' }
+        ],
+        showStatus: [
+            { required: true, message: '显示状态[0-不显示；1-显示]不能为空', trigger: 'blur' }
+        ],
+        firstLetter: [
+            { required: true, message: '检索首字母不能为空', trigger: 'blur' }
+        ],
+        sort: [
+            { required: true, message: '排序不能为空', trigger: 'blur' }
+        ]
       }
     }
+  },
+  methods: {
+    init (id) {
+      this.dataForm.brandId = id || 0
+      this.visible = true
+      this.$nextTick(() => {
+        this.$refs['dataForm'].resetFields()
+        if (this.dataForm.brandId) {
+          this.$http({
+            url: this.$http.adornUrl(`/product/brand/info/${this.dataForm.brandId}`),
+            method: 'get',
+            params: this.$http.adornParams()
+          }).then(({data}) => {
+            if (data && data.code === 0) {
+              this.dataForm.name = data.pmsBrand.name
+              this.dataForm.logo = data.pmsBrand.logo
+              this.dataForm.descript = data.pmsBrand.descript
+              this.dataForm.showStatus = data.pmsBrand.showStatus
+              this.dataForm.firstLetter = data.pmsBrand.firstLetter
+              this.dataForm.sort = data.pmsBrand.sort
+            }
+          })
+        }
+      })
+    },
+      // 表单提交
+    dataFormSubmit () {
+      this.$refs['dataForm'].validate((valid) => {
+        if (valid) {
+          this.$http({
+            url: this.$http.adornUrl(`/product/brand/${!this.dataForm.brandId ? 'save' : 'update'}`),
+            method: 'post',
+            data: this.$http.adornData({
+              'brandId': this.dataForm.brandId || undefined,
+              'name': this.dataForm.name,
+              'logo': this.dataForm.logo,
+              'descript': this.dataForm.descript,
+              'showStatus': this.dataForm.showStatus,
+              'firstLetter': this.dataForm.firstLetter,
+              'sort': this.dataForm.sort
+            })
+          }).then(({data}) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: '操作成功',
+                type: 'success',
+                duration: 1500,
+                onClose: () => {
+                  this.visible = false
+                  this.$emit('refreshDataList')
+                }
+              })
+            } else {
+              this.$message.error(data.msg)
+            }
+          })
+        }
+      })
+    }
   }
+}
 </script>
