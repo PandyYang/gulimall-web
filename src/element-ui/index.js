@@ -71,6 +71,7 @@ import {
   Header,
   Aside,
   Main,
+  Image,
   Footer,
   Loading,
   MessageBox,

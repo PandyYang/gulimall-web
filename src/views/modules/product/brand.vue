@@ -45,6 +45,12 @@
         header-align="center"
         align="center"
         label="介绍">
+        <template slot-scope="scope">
+          <el-image
+            style="width: 100px; height: 80px"
+            :src="scope.row.logo"
+            :fit="contain"></el-image>
+        </template>
       </el-table-column>
       <el-table-column
         prop="showStatus"
