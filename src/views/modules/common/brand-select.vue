@@ -1,15 +1,13 @@
 <template>
   <div>
-    <el-input placeholder="输入关键字进行过滤" v-model="filterText"></el-input>
-    <el-tree
-      :data="menus"
-      :props="defaultProps"
-      node-key="catId"
-      ref="menuTree"
-      @node-click="nodeclick"
-      :filter-node-method="filterNode"
-      :highlight-current = "true"
-    ></el-tree>
+    <el-select placeholder="请选择" v-model="brandId" filterable clearable>
+      <el-option
+        v-for="item in brands"
+        :key="item.brandId"
+        :label="item.brandName"
+        :value="item.brandId"
+      ></el-option>
+    </el-select>
   </div>
 </template>
 
@@ -24,59 +22,59 @@ export default {
   data () {
     // 这里存放数据
     return {
-      filterText: '',
-      menus: [],
-      expandedKey: [],
-      defaultProps: {
-        children: 'children',
-        label: 'name'
-      }
+      catId: 0,
+      brands: [
+        {
+          label: 'a',
+          value: 1
+        }
+      ],
+      brandId: '',
+      subscribe: null
     }
   },
   // 计算属性 类似于data概念
   computed: {},
   // 监控data中的数据变化
   watch: {
-    filterText (val) {
-      this.$refs.menuTree.filter(val)
+    brandId (val) {
+      this.PubSub.publish('brandId', val)
     }
   },
   // 方法集合
   methods: {
-    // 树节点过滤
-    filterNode (value, data) {
-      if (!value) return true
-      return data.name.indexOf(value) !== -1
-    },
-    getMenus () {
+    getCatBrands () {
       this.$http({
-        url: this.$http.adornUrl('/product/category/list/tree'),
-        method: 'get'
+        url: this.$http.adornUrl('/product/categorybrandrelation/brands/list'),
+        method: 'get',
+        params: this.$http.adornParams({
+          catId: this.catId
+        })
       }).then(({ data }) => {
-        this.menus = data.data
+        this.brands = data.data
       })
-    },
-    nodeclick (data, node, component) {
-      console.log('子组件category的节点被点击', data, node, component)
-      // 向父组件发送事件；
-      this.$emit('tree-node-click', data, node, component)
     }
   },
   // 生命周期 - 创建完成（可以访问当前this实例）
-  created () {
-    this.getMenus()
-  },
+  created () {},
   // 生命周期 - 挂载完成（可以访问DOM元素）
-  mounted () {},
+  mounted () {
+    // 监听三级分类消息的变化
+    this.subscribe = PubSub.subscribe('catPath', (msg, val) => {
+      this.catId = val[val.length - 1]
+      this.getCatBrands()
+    })
+  },
   beforeCreate () {}, // 生命周期 - 创建之前
   beforeMount () {}, // 生命周期 - 挂载之前
   beforeUpdate () {}, // 生命周期 - 更新之前
   updated () {}, // 生命周期 - 更新之后
-  beforeDestroy () {}, // 生命周期 - 销毁之前
+  beforeDestroy () {
+    PubSub.unsubscribe(this.subscribe) // 销毁订阅
+  }, // 生命周期 - 销毁之前
   destroyed () {}, // 生命周期 - 销毁完成
   activated () {} // 如果页面有keep-alive缓存功能，这个函数会触发
 }
 </script>
 <style scoped>
-
 </style>
