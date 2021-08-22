@@ -25,7 +25,7 @@
     <el-form-item label="所属分类" prop="catelogId">
 <!--      <el-input v-model="dataForm.catelogId" placeholder="所属分类"></el-input>-->
       <el-cascader
-        v-model="dataForm.catelogIds"
+        v-model="dataForm.catelogPath"
         :options="categorys"
         :props="props"></el-cascader>
     </el-form-item>
@@ -61,7 +61,8 @@
           enable: '',
           catelogIds: [],
           catelogId: 0,
-          showDesc: ''
+          showDesc: '',
+          catelogPath: ''
         },
         dataRule: {
           attrName: [
@@ -110,19 +111,18 @@
           this.$refs['dataForm'].resetFields()
           if (this.dataForm.attrId) {
             this.$http({
-              url: this.$http.adornUrl(`/product/attr/info/${this.dataForm.attrId}`),
+              url: this.$http.adornUrl(`/product/attrgroup/info/${this.dataForm.attrId}`),
               method: 'get',
               params: this.$http.adornParams()
             }).then(({data}) => {
               if (data && data.code === 0) {
-                this.dataForm.attrName = data.pmsAttr.attrName
-                this.dataForm.searchType = data.pmsAttr.searchType
-                this.dataForm.icon = data.pmsAttr.icon
-                this.dataForm.valueSelect = data.pmsAttr.valueSelect
-                this.dataForm.attrType = data.pmsAttr.attrType
-                this.dataForm.enable = data.pmsAttr.enable
-                this.dataForm.catelogId = data.pmsAttr.catelogId
-                this.dataForm.showDesc = data.pmsAttr.showDesc
+                this.dataForm.attrName = data.attrGroup.attrGroupName
+                this.dataForm.searchType = data.attrGroup.searchType
+                this.dataForm.icon = data.attrGroup.icon
+                this.dataForm.sort = data.attrGroup.sort
+                this.dataForm.catelogId = data.attrGroup.catelogId
+                this.dataForm.showDesc = data.attrGroup.descript
+                this.dataForm.catelogPath = data.attrGroup.catelogPath
               }
             })
           }
