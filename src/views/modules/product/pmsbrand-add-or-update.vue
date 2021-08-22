@@ -82,12 +82,22 @@ export default {
             params: this.$http.adornParams()
           }).then(({data}) => {
             if (data && data.code === 0) {
-              this.dataForm.name = data.pmsBrand.name
-              this.dataForm.logo = data.pmsBrand.logo
-              this.dataForm.descript = data.pmsBrand.descript
-              this.dataForm.showStatus = data.pmsBrand.showStatus
-              this.dataForm.firstLetter = data.pmsBrand.firstLetter
-              this.dataForm.sort = data.pmsBrand.sort
+
+              /**
+               *   brandId: 0,
+                   name: '',
+                   logo: '',
+                   descript: '',
+                   showStatus: '',
+                   firstLetter: '',
+                   sort: ''
+               */
+              this.dataForm.name = data.brand.name
+              this.dataForm.logo = data.brand.logo
+              this.dataForm.descript = data.brand.descript
+              this.dataForm.showStatus = data.brand.showStatus
+              this.dataForm.firstLetter = data.brand.firstLetter
+              this.dataForm.sort = data.brand.sort
             }
           })
         }
