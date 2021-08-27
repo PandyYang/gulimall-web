@@ -28,7 +28,7 @@
         <!-- <el-input v-model="dataForm.catelogId" placeholder="所属分类id"></el-input> @change="handleChange" -->
         <!-- <el-cascader filterable placeholder="试试搜索：手机" v-model="catelogPath" :options="categorys"  :props="props"></el-cascader> -->
         <!-- :catelogPath="catelogPath"自定义绑定的属性，可以给子组件传值 -->
-        <category-cascader :catelogPath.sync="dataForm.catelogPath"></category-cascader>
+        <category-cascader :catelogPath.sync="catelogPath"></category-cascader>
       </el-form-item>
     </el-form>
     <span slot="footer" class="dialog-footer">
@@ -109,6 +109,7 @@ export default {
               this.dataForm.icon = data.attrGroup.icon
               this.dataForm.catelogId = data.attrGroup.catelogId
               // 查出catelogId的完整路径
+              debugger
               this.dataForm.catelogPath = data.attrGroup.catelogPath
             }
           })
@@ -117,6 +118,7 @@ export default {
     },
     // 表单提交
     dataFormSubmit () {
+      debugger
       this.$refs['dataForm'].validate(valid => {
         if (valid) {
           this.$http({
